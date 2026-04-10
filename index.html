@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meshy for Roblox Developers — AI 3D Model Generator</title>
+  <meta name="description" content="Generate Roblox-ready 3D assets with AI. No Blender. No rigging. Just describe what you need and export to Roblox Studio in seconds." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #0A0A0F;
+      --bg2:      #10101A;
+      --bg3:      #141420;
+      --purple:   #7C3AED;
+      --violet:   #4F46E5;
+      --lavender: #818CF8;
+      --text:     #F1F0FF;
+      --muted:    #8B8AA8;
+      --border:   rgba(124,58,237,0.2);
+      --glow:     rgba(124,58,237,0.35);
+      --radius:   14px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    /* ── Utility ──────────────────────────────────────── */
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(124,58,237,0.12);
+      border: 1px solid var(--border);
+      color: var(--lavender);
+      font-size: 13px; font-weight: 500;
+      padding: 5px 14px; border-radius: 100px;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--purple), var(--violet));
+      color: #fff; font-size: 15px; font-weight: 600;
+      padding: 13px 28px; border-radius: 10px; border: none; cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 28px rgba(124,58,237,0.4);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(124,58,237,0.6);
+    }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent;
+      color: var(--lavender); font-size: 15px; font-weight: 500;
+      padding: 13px 24px; border-radius: 10px;
+      border: 1px solid var(--border);
+      cursor: pointer; transition: border-color .2s, background .2s;
+    }
+    .btn-secondary:hover {
+      border-color: var(--purple);
+      background: rgba(124,58,237,0.08);
+    }
+
+    /* ── Scroll reveal ────────────────────────────────── */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Background mesh ──────────────────────────────── */
+    .mesh {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 10%, rgba(124,58,237,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(79,70,229,0.1) 0%, transparent 70%);
+    }
+
+    /* ── Navbar ───────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.75);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 20px; font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--purple), var(--violet));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 18px; height: 18px; fill: #fff; }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 14px; color: var(--muted); transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { font-size: 14px; font-weight: 600; padding: 9px 20px; border-radius: 8px; }
+    @media (max-width: 768px) { .nav-links { display: none; } }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      padding: 100px 0 80px;
+      text-align: center;
+    }
+    .hero-badge { margin-bottom: 24px; }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 72px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.08;
+      margin-bottom: 24px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #c084fc, var(--lavender));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--muted);
+      max-width: 560px; margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .hero-actions { display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .hero-note { font-size: 13px; color: var(--muted); margin-top: 16px; }
+
+    /* ── 3D Showcase ──────────────────────────────────── */
+    .showcase {
+      position: relative; z-index: 1;
+      margin: 60px auto 0; max-width: 860px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 0 80px rgba(124,58,237,0.15);
+    }
+    .showcase-label {
+      font-size: 12px; color: var(--muted); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .showcase-label::before {
+      content: '';
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+    .models-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    }
+    @media (max-width: 600px) { .models-grid { grid-template-columns: repeat(2, 1fr); } }
+    .model-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 16px;
+      text-align: center;
+      transition: border-color .3s, transform .3s;
+    }
+    .model-card:hover { border-color: var(--purple); transform: translateY(-4px); }
+    .model-3d {
+      width: 80px; height: 80px; margin: 0 auto 12px;
+      animation: float 3s ease-in-out infinite;
+    }
+    .model-card:nth-child(2) .model-3d { animation-delay: .5s; }
+    .model-card:nth-child(3) .model-3d { animation-delay: 1s; }
+    .model-card:nth-child(4) .model-3d { animation-delay: 1.5s; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotateY(0); }
+      50% { transform: translateY(-8px) rotateY(15deg); }
+    }
+    .model-name { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .model-prompt { font-size: 11px; color: var(--muted); }
+    .showcase-footer {
+      margin-top: 20px; display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: gap;
+    }
+    .prompt-box {
+      flex: 1; background: var(--bg3);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 16px; font-size: 13px; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .prompt-box span { color: var(--lavender); }
+
+    /* ── Trust Bar ────────────────────────────────────── */
+    .trust {
+      position: relative; z-index: 1;
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .trust-inner {
+      display: flex; justify-content: center; align-items: center;
+      gap: 48px; flex-wrap: wrap;
+    }
+    .trust-item { text-align: center; }
+    .trust-num {
+      font-size: 28px; font-weight: 800;
+      background: linear-gradient(135deg, #c084fc, var(--lavender));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .trust-label { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .trust-sep { width: 1px; height: 40px; background: var(--border); }
+    @media (max-width: 600px) { .trust-sep { display: none; } }
+
+    /* ── Section headings ─────────────────────────────── */
+    .section-head { text-align: center; margin-bottom: 60px; }
+    .section-head h2 {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800; letter-spacing: -1px; margin: 12px 0 16px;
+    }
+    .section-head p { font-size: 17px; color: var(--muted); max-width: 520px; margin: 0 auto; }
+
+    /* ── Features ─────────────────────────────────────── */
+    .features { position: relative; z-index: 1; padding: 100px 0; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    @media (max-width: 900px) { .features-grid { grid-template-columns: 1fr; } }
+    .feat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .feat-card:hover {
+      border-color: var(--purple);
+      box-shadow: 0 0 32px rgba(124,58,237,0.12);
+    }
+    .feat-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(124,58,237,0.15);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px; font-size: 22px;
+    }
+    .feat-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+    .feat-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    .feat-scenario {
+      margin-top: 20px; padding: 14px;
+      background: var(--bg3); border-radius: 10px;
+      border-left: 3px solid var(--purple);
+      font-size: 13px; color: var(--muted); font-style: italic;
+    }
+
+    /* ── How it works ─────────────────────────────────── */
+    .howitworks { position: relative; z-index: 1; padding: 80px 0; }
+    .steps { display: flex; gap: 0; align-items: flex-start; justify-content: center; }
+    @media (max-width: 768px) { .steps { flex-direction: column; align-items: center; gap: 24px; } }
+    .step { flex: 1; max-width: 240px; text-align: center; padding: 0 16px; position: relative; }
+    .step::after {
+      content: '→';
+      position: absolute; right: -10px; top: 20px;
+      font-size: 22px; color: var(--muted);
+    }
+    .step:last-child::after { display: none; }
+    @media (max-width: 768px) { .step::after { display: none; } }
+    .step-num {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--violet));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; margin: 0 auto 16px;
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .step h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 13px; color: var(--muted); }
+
+    /* ── Testimonials ─────────────────────────────────── */
+    .testimonials { position: relative; z-index: 1; padding: 100px 0; }
+    .testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 900px) { .testi-grid { grid-template-columns: 1fr; } }
+    .testi-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .testi-stars { color: #FBBF24; font-size: 14px; margin-bottom: 14px; }
+    .testi-card blockquote { font-size: 14px; color: var(--muted); line-height: 1.7; font-style: italic; margin-bottom: 20px; }
+    .testi-author { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--violet));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .author-name { font-size: 13px; font-weight: 600; }
+    .author-sub { font-size: 12px; color: var(--muted); }
+
+    /* ── FAQ ──────────────────────────────────────────── */
+    .faq { position: relative; z-index: 1; padding: 80px 0; max-width: 720px; margin: 0 auto; }
+    .faq-item {
+      border-bottom: 1px solid var(--border); padding: 22px 0; cursor: pointer;
+    }
+    .faq-q {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 15px; font-weight: 600;
+    }
+    .faq-icon { font-size: 20px; color: var(--purple); transition: transform .3s; }
+    .faq-item.open .faq-icon { transform: rotate(45deg); }
+    .faq-a {
+      font-size: 14px; color: var(--muted); line-height: 1.7;
+      max-height: 0; overflow: hidden; transition: max-height .4s ease, margin .3s;
+    }
+    .faq-item.open .faq-a { max-height: 200px; margin-top: 12px; }
+
+    /* ── Final CTA ────────────────────────────────────── */
+    .final-cta {
+      position: relative; z-index: 1;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .cta-box {
+      max-width: 680px; margin: 0 auto;
+      background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(79,70,229,0.08));
+      border: 1px solid var(--border);
+      border-radius: 24px; padding: 64px 48px;
+      box-shadow: 0 0 80px rgba(124,58,237,0.1);
+    }
+    .cta-box h2 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800; letter-spacing: -1px; margin-bottom: 16px;
+    }
+    .cta-box p { font-size: 16px; color: var(--muted); margin-bottom: 36px; }
+    .cta-box .btn-primary { font-size: 16px; padding: 15px 36px; }
+
+    /* ── Footer ───────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    .footer-inner {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .footer-links { display: flex; gap: 28px; }
+    .footer-links a { font-size: 13px; color: var(--muted); transition: color .2s; }
+    .footer-links a:hover { color: var(--lavender); }
+    .footer-copy { font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="mesh"></div>
+
+<!-- ── Navbar ── -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        Meshy
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it Works</a>
+        <a href="#testimonials">Developers</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <a href="https://www.meshy.ai" target="_blank" class="btn-primary nav-cta">
+        Start Free
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge reveal">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Built for Roblox Developers
+    </div>
+
+    <h1 class="reveal">
+      Stop Wrestling with Blender.<br/>
+      <span>Just Describe Your Asset.</span>
+    </h1>
+
+    <p class="reveal">
+      Meshy turns text prompts into Roblox-ready 3D models in seconds —
+      optimized poly count, compatible formats, and the low-poly style your game needs.
+    </p>
+
+    <div class="hero-actions reveal">
+      <a href="https://www.meshy.ai" target="_blank" class="btn-primary">
+        Generate Free
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#how-it-works" class="btn-secondary">See How It Works</a>
+    </div>
+    <p class="hero-note reveal">No credit card required · Exports to .OBJ &amp; .FBX · Roblox Studio compatible</p>
+
+    <!-- Showcase -->
+    <div class="showcase reveal">
+      <div class="showcase-label">Live generation preview — Roblox-style assets</div>
+      <div class="models-grid">
+        <div class="model-card">
+          <div class="model-3d">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="50,8 90,30 90,70 50,92 10,70 10,30" fill="#3B1A6E" stroke="#7C3AED" stroke-width="2"/>
+              <polygon points="50,8 90,30 50,52 10,30" fill="#5B2D9E" stroke="#7C3AED" stroke-width="1.5"/>
+              <polygon points="50,52 90,30 90,70 50,92" fill="#2D0F52" stroke="#7C3AED" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="model-name">Castle Tower</div>
+          <div class="model-prompt">"stone medieval tower"</div>
+        </div>
+        <div class="model-card">
+          <div class="model-3d">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="45" width="60" height="40" rx="4" fill="#1A4D2E" stroke="#22c55e" stroke-width="2"/>
+              <polygon points="10,45 50,10 90,45" fill="#2D7A47" stroke="#22c55e" stroke-width="2"/>
+              <rect x="40" y="65" width="20" height="20" fill="#0F2D1A" stroke="#22c55e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="model-name">Wizard House</div>
+          <div class="model-prompt">"fantasy wooden cottage"</div>
+        </div>
+        <div class="model-card">
+          <div class="model-3d">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="50" cy="75" rx="30" ry="10" fill="#1A1A3E" stroke="#4F46E5" stroke-width="1.5"/>
+              <ellipse cx="50" cy="50" rx="22" ry="30" fill="#3B1A6E" stroke="#7C3AED" stroke-width="2"/>
+              <ellipse cx="50" cy="42" rx="14" ry="16" fill="#5B2D9E" stroke="#818CF8" stroke-width="1.5"/>
+              <circle cx="50" cy="32" r="8" fill="#7C3AED" stroke="#c084fc" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="model-name">Space Rocket</div>
+          <div class="model-prompt">"sci-fi rocket ship"</div>
+        </div>
+        <div class="model-card">
+          <div class="model-3d">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <rect x="25" y="55" width="50" height="30" rx="5" fill="#7C3A14" stroke="#F97316" stroke-width="2"/>
+              <polygon points="50,20 80,55 20,55" fill="#C2500F" stroke="#F97316" stroke-width="2"/>
+              <rect x="38" y="68" width="12" height="17" fill="#5A1A06" stroke="#F97316" stroke-width="1.5"/>
+              <rect x="55" y="62" width="10" height="10" fill="#5A1A06" stroke="#F97316" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="model-name">Treasure Chest</div>
+          <div class="model-prompt">"pirate treasure chest"</div>
+        </div>
+      </div>
+      <div class="showcase-footer" style="margin-top:20px; display:flex; align-items:center; gap:12px;">
+        <div class="prompt-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span>Type a prompt...</span>  e.g. "glowing crystal sword", "wooden pirate ship", "neon cityblock"
+        </div>
+        <a href="https://www.meshy.ai" target="_blank" class="btn-primary" style="white-space:nowrap; flex-shrink:0;">
+          Generate
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Trust Bar ── -->
+<div class="trust reveal">
+  <div class="container">
+    <div class="trust-inner">
+      <div class="trust-item">
+        <div class="trust-num">4M+</div>
+        <div class="trust-label">3D models generated</div>
+      </div>
+      <div class="trust-sep"></div>
+      <div class="trust-item">
+        <div class="trust-num">200K+</div>
+        <div class="trust-label">Active game developers</div>
+      </div>
+      <div class="trust-sep"></div>
+      <div class="trust-item">
+        <div class="trust-num">&lt;30s</div>
+        <div class="trust-label">Average generation time</div>
+      </div>
+      <div class="trust-sep"></div>
+      <div class="trust-item">
+        <div class="trust-num">OBJ/FBX</div>
+        <div class="trust-label">Roblox Studio compatible</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Features ── -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="badge">Core Features</div>
+      <h2>Everything Roblox Developers Actually Need</h2>
+      <p>Not generic 3D generation — tools designed around how Roblox games are actually built.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-icon">🎮</div>
+        <h3>Describe It, Drop It in Studio</h3>
+        <p>Type what you need in plain English. Meshy generates a fully textured 3D asset, ready to export as .OBJ or .FBX and drag directly into Roblox Studio — no conversion needed.</p>
+        <div class="feat-scenario">
+          "I typed 'ancient stone archway with moss'. 25 seconds later I had a .obj in my workspace. Done."
+        </div>
+      </div>
+
+      <div class="feat-card reveal">
+        <div class="feat-icon">⚡</div>
+        <h3>Roblox-Optimized by Default</h3>
+        <p>Roblox's polygon and texture limits are baked into every generation. No manual decimation, no oversized textures causing lag — your assets perform great out of the box.</p>
+        <div class="feat-scenario">
+          "Other tools gave me 200k poly meshes. Meshy gives me Roblox-ready 8k-poly models. It just works."
+        </div>
+      </div>
+
+      <div class="feat-card reveal">
+        <div class="feat-icon">🔁</div>
+        <h3>Build a World, Not Just One Asset</h3>
+        <p>Keep a consistent art style across your entire game. Generate themed sets of props, buildings, and items in bulk — everything stays visually cohesive without manual matching.</p>
+        <div class="feat-scenario">
+          "I built a 12-asset fantasy village set in under an hour. My old Blender workflow would've taken a week."
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it Works ── -->
+<section class="howitworks" id="how-it-works">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="badge">Simple Workflow</div>
+      <h2>From Idea to Roblox Studio in 3 Steps</h2>
+      <p>No setup, no learning curve. Just describe, generate, and play.</p>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Describe Your Asset</h4>
+        <p>Type a prompt like "wooden treasure chest with gold trim" — as specific or as broad as you want.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>Generate in Seconds</h4>
+        <p>Meshy creates a textured, low-poly 3D model auto-optimized for Roblox's performance requirements.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Export &amp; Import</h4>
+        <p>Download as .OBJ or .FBX and drag it straight into Roblox Studio. No cleanup, no re-rigging.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Testimonials ── -->
+<section class="testimonials" id="testimonials">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="badge">Developer Stories</div>
+      <h2>What Roblox Developers Are Saying</h2>
+      <p>From solo builders to full studios — here's how Meshy changed their workflow.</p>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <blockquote>"I used to spend 2 hours per prop in Blender, and half of that was fighting poly count. With Meshy, it's 2 minutes. My game went from concept to playable prototype in a weekend."</blockquote>
+        <div class="testi-author">
+          <div class="avatar">RK</div>
+          <div>
+            <div class="author-name">rocketkid_dev</div>
+            <div class="author-sub">Solo developer · 3 published Roblox games</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <blockquote>"The format compatibility was the dealbreaker for other tools. Meshy actually exports FBX that Roblox Studio accepts without errors. That alone is worth everything."</blockquote>
+        <div class="testi-author">
+          <div class="avatar">NX</div>
+          <div>
+            <div class="author-name">NexusBuilds</div>
+            <div class="author-sub">Lead builder · 400k+ place visits</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <blockquote>"We needed 40 props for our RPG map. Generating a style-consistent set in bulk? That's something no other tool offered. Meshy saved us two weeks of asset work."</blockquote>
+        <div class="testi-author">
+          <div class="avatar">PX</div>
+          <div>
+            <div class="author-name">PixelForge Studio</div>
+            <div class="author-sub">3-person team · Robux-monetized game</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section style="position:relative;z-index:1;padding:80px 0;">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="badge">FAQ</div>
+      <h2>Common Questions from Roblox Devs</h2>
+    </div>
+    <div class="faq reveal">
+      <div class="faq-item">
+        <div class="faq-q">
+          Does Meshy export formats that work in Roblox Studio?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">Yes. Meshy exports .OBJ and .FBX — both of which Roblox Studio accepts natively. You can import them directly without any conversion tools or plugins.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          Will the polygon count exceed Roblox's limits and cause lag?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">Meshy's generation pipeline is tuned for game-engine use. Assets come out with reasonable polygon counts by default, and you can request even lighter "low-poly" variants specifically optimized for Roblox performance budgets.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          Can Meshy match the cartoon / blocky Roblox aesthetic?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">Absolutely. Include style keywords in your prompt — "low poly", "cartoon", "blocky", "stylized" — and Meshy will generate assets that fit naturally alongside Roblox's visual style.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          Is there a free tier? Do I need a credit card?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">Meshy offers a free tier with no credit card required. You can generate and download assets immediately after signing up. Paid plans unlock higher resolution, faster generation, and commercial use rights.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          Can I use generated assets in monetized Roblox games?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">Yes. Paid plan subscribers receive full commercial rights to all generated assets, including use in Robux-monetized games and games sold on Roblox marketplace.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Final CTA ── -->
+<section class="final-cta" id="faq">
+  <div class="cta-box reveal">
+    <div class="badge" style="margin-bottom:20px;">Get Started Free</div>
+    <h2>Your Next Roblox Game Starts Here.</h2>
+    <p>Stop waiting on assets. Describe what you need, generate in seconds, and ship your game faster than you ever thought possible.</p>
+    <a href="https://www.meshy.ai" target="_blank" class="btn-primary">
+      Start Generating Free
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <p style="margin-top:16px; font-size:13px; color:var(--muted);">No credit card · Free tier available · Roblox Studio compatible exports</p>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="#" class="logo">
+        <div class="logo-icon" style="width:24px;height:24px;border-radius:6px;">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:#fff;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        Meshy
+      </a>
+      <div class="footer-links">
+        <a href="https://www.meshy.ai" target="_blank">meshy.ai</a>
+        <a href="https://www.meshy.ai/pricing" target="_blank">Pricing</a>
+        <a href="https://www.meshy.ai/blog" target="_blank">Blog</a>
+        <a href="https://discord.gg/meshy" target="_blank">Discord</a>
+      </div>
+      <div class="footer-copy">© 2025 Meshy. All rights reserved.</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // FAQ accordion
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.querySelector('.faq-q').addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+</script>
+</body>
+</html>
