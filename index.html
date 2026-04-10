@@ -85,11 +85,53 @@
     .btn-lime.nav-cta { font-size: 14px; padding: 9px 20px; }
     @media (max-width: 768px) { .nav-links { display: none; } .nav-login { display: none; } }
 
+    /* ── Hamburger ── */
+    .nav-burger {
+      display: none; flex-direction: column; justify-content: space-between;
+      width: 28px; height: 20px; background: none; border: none; cursor: pointer;
+      padding: 0; flex-shrink: 0;
+    }
+    .nav-burger span {
+      display: block; width: 100%; height: 2px;
+      background: var(--text); border-radius: 2px;
+      transition: transform .3s, opacity .3s;
+    }
+    .nav-burger.open span:nth-child(1) { transform: translateY(9px) rotate(45deg); }
+    .nav-burger.open span:nth-child(2) { opacity: 0; }
+    .nav-burger.open span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
+    @media (max-width: 768px) { .nav-burger { display: flex; } }
+
+    /* ── Mobile nav drawer ── */
+    .mobile-nav {
+      display: none; flex-direction: column; gap: 4px;
+      position: sticky; top: 64px; z-index: 99;
+      background: rgba(17,17,17,0.97);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px 20px;
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav a {
+      font-size: 15px; font-weight: 500; color: var(--muted);
+      padding: 10px 4px;
+      border-bottom: 1px solid var(--border);
+      transition: color .2s;
+    }
+    .mobile-nav a:last-child { border-bottom: none; }
+    .mobile-nav a:hover { color: var(--text); }
+
     /* ── Hero ── */
     .hero {
       padding: 96px 0 72px;
       text-align: center;
+      position: relative;
+      background:
+        radial-gradient(ellipse 900px 600px at 50% -5%, rgba(197,255,0,0.07) 0%, transparent 65%),
+        repeating-linear-gradient(rgba(255,255,255,0.02) 0 1px, transparent 1px 60px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 60px);
     }
+    .hero .container { position: relative; z-index: 1; }
+    .hero .showcase { position: relative; z-index: 1; }
     .hero-tag {
       display: inline-flex; align-items: center; gap: 6px;
       background: rgba(197,255,0,0.1);
@@ -107,7 +149,7 @@
       color: #fff;
       margin-bottom: 24px;
     }
-    .hero h1 .highlight { color: var(--lime); }
+    .hero h1 .highlight { color: var(--lime); text-shadow: 0 0 40px rgba(197,255,0,0.35); }
     .hero p {
       font-size: clamp(16px, 2vw, 19px);
       color: var(--muted);
@@ -143,7 +185,7 @@
       transition: transform .3s;
       cursor: pointer;
     }
-    .model-tile:hover { transform: translateY(-6px); }
+    .model-tile:hover { transform: translateY(-6px); box-shadow: 0 0 0 1.5px rgba(197,255,0,0.4), 0 20px 40px rgba(0,0,0,0.5); }
     .model-tile.featured { aspect-ratio: 3/5; }
 
     /* Individual card backgrounds matching Meshy */
@@ -343,12 +385,17 @@
 
     /* ── Final CTA ── */
     .final-cta { padding: 100px 24px; text-align: center; }
+    @keyframes ctaPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(197,255,0,0.15); }
+      50%       { box-shadow: 0 0 0 14px rgba(197,255,0,0); }
+    }
     .cta-box {
       max-width: 700px; margin: 0 auto;
       background: var(--bg2);
       border: 1px solid rgba(197,255,0,0.2);
       border-radius: 28px; padding: 72px 48px;
       position: relative; overflow: hidden;
+      animation: ctaPulse 3.5s ease-in-out infinite;
     }
     .cta-box::before {
       content: '';
@@ -364,7 +411,20 @@
     .cta-box p { font-size: 16px; color: var(--muted); margin-bottom: 36px; }
     .cta-sub { font-size: 13px; color: #444; margin-top: 16px; }
 
-    /* ── Footer ── */
+    /* ── Trust badges ── */
+    .trust-row {
+      display: flex; justify-content: center; align-items: center;
+      flex-wrap: wrap; gap: 8px; margin-top: 18px;
+    }
+    .trust-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-size: 12px; color: #888;
+    }
+    .trust-pill svg { opacity: .7; }
     footer {
       border-top: 1px solid var(--border);
       padding: 40px 0;
@@ -417,10 +477,21 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           免费注册
         </a>
+        <button class="nav-burger" id="navBurger" aria-label="菜单">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
   </div>
 </nav>
+<!-- Mobile nav drawer -->
+<div class="mobile-nav" id="mobileNav">
+  <a href="#features" onclick="closeMobileNav()">功能</a>
+  <a href="#how-it-works" onclick="closeMobileNav()">使用方法</a>
+  <a href="#testimonials" onclick="closeMobileNav()">开发者</a>
+  <a href="#faq" onclick="closeMobileNav()">FAQ</a>
+  <a href="https://www.meshy.ai" target="_blank" class="btn-lime" style="justify-content:center;margin-top:8px;">免费注册</a>
+</div>
 
 <!-- ── Hero ── -->
 <section class="hero">
@@ -447,7 +518,20 @@
       </a>
       <a href="#how-it-works" class="btn-ghost">查看演示</a>
     </div>
-    <p class="hero-note reveal">无需信用卡 · 导出 .OBJ / .FBX · 支持 Roblox Studio</p>
+    <div class="trust-row reveal">
+      <span class="trust-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>无需信用卡
+      </span>
+      <span class="trust-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>导出 .OBJ / .FBX
+      </span>
+      <span class="trust-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>支持 Roblox Studio
+      </span>
+      <span class="trust-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>30 秒内生成
+      </span>
+    </div>
   </div>
 
   <!-- Model showcase tiles -->
@@ -585,12 +669,12 @@
   <div class="container">
     <div class="stats-inner">
       <div class="stat-item">
-        <div class="stat-num">4M+</div>
+        <div class="stat-num" data-count="4" data-suffix="M+">4M+</div>
         <div class="stat-label">已生成 3D 模型</div>
       </div>
       <div class="stat-sep"></div>
       <div class="stat-item">
-        <div class="stat-num">200K+</div>
+        <div class="stat-num" data-count="200" data-suffix="K+">200K+</div>
         <div class="stat-label">活跃游戏开发者</div>
       </div>
       <div class="stat-sep"></div>
@@ -782,6 +866,11 @@
       免费开始创建
     </a>
     <p class="cta-sub">无需信用卡 · 免费版可用 · 兼容 Roblox Studio 导出</p>
+    <div class="trust-row" style="margin-top:12px;">
+      <span class="trust-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>免费可用</span>
+      <span class="trust-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>商业授权</span>
+      <span class="trust-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>200K+ 开发者信赖</span>
+    </div>
   </div>
 </section>
 
@@ -824,6 +913,41 @@
       if (!open) item.classList.add('open');
     });
   });
+
+  // Animated stat counters
+  function animateCount(el, target, suffix) {
+    const duration = 1600;
+    let startTime = null;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(ease * target) + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  const statObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting && e.target.dataset.count) {
+        statObserver.unobserve(e.target);
+        animateCount(e.target, Number(e.target.dataset.count), e.target.dataset.suffix || '');
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat-num[data-count]').forEach(el => statObserver.observe(el));
+
+  // Mobile hamburger
+  const burger = document.getElementById('navBurger');
+  const mobileNav = document.getElementById('mobileNav');
+  burger.addEventListener('click', () => {
+    const isOpen = mobileNav.classList.toggle('open');
+    burger.classList.toggle('open', isOpen);
+  });
+  function closeMobileNav() {
+    mobileNav.classList.remove('open');
+    burger.classList.remove('open');
+  }
 </script>
 </body>
 </html>
